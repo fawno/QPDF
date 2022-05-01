@@ -1,4 +1,6 @@
 <?php
+  declare(strict_types=1);
+
 	namespace Fawno\QPDF;
 
 	use FFI;
@@ -26,8 +28,20 @@
 		}
 
 		public function __destruct () {
-			FFI::free($this->data);
+			if (is_object($this->data)) {
+				$this->qpdf->qpdf_cleanup(FFI::addr($this->data));
+			}
 		}
+
+    public function init () : void {
+      $this->data = $this->qpdf->qpdf_init();
+    }
+
+    public function cleanup () : void {
+			if (is_object($this->data)) {
+				$this->qpdf->qpdf_cleanup(FFI::addr($this->data));
+			}
+    }
 
 		public function getVersion () : string {
 			return $this->qpdf->qpdf_get_qpdf_version();
@@ -54,7 +68,7 @@
 		}
 
 		public function hasError () : bool {
-			return $this->qpdf->qpdf_has_error($this->data);
+			return (bool) $this->qpdf->qpdf_has_error($this->data);
 		}
 
 		public function getError () : array {
@@ -70,7 +84,7 @@
 		}
 
 		public function hasWarning () : bool {
-			return $this->qpdf->qpdf_more_warnings($this->data);
+			return (bool) $this->qpdf->qpdf_more_warnings($this->data);
 		}
 
 		public function getWarning () : array {

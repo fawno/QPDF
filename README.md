@@ -37,8 +37,8 @@ php composer.phar require "fawno/qpdf"
 
 	$qpdf->readFile($filename, $password);
 	if ($qpdf->hasError()) {
-		$warning = $qpdf->getError();
-		print_r($warning);
+		$error = $qpdf->getError();
+		print_r($error);
 		die();
 	}
 
@@ -50,8 +50,8 @@ php composer.phar require "fawno/qpdf"
 	$filename = __DIR__ . '/document_without_encrypt.pdf';
 	$qpdf->initWrite($filename);
 	if ($qpdf->hasError()) {
-		$warning = $qpdf->getError();
-		print_r($warning);
+		$error = $qpdf->getError();
+		print_r($error);
 		die();
 	}
 
@@ -59,8 +59,8 @@ php composer.phar require "fawno/qpdf"
 
 	$qpdf->write();
 	if ($qpdf->hasError()) {
-		$warning = $qpdf->getError();
-		print_r($warning);
+		$error = $qpdf->getError();
+		print_r($error);
 		die();
 	}
 ```
