@@ -1,0 +1,23 @@
+{
+    "name": "fawno/qpdf",
+    "description": "PHP class for access QPDF C Interface",
+    "type": "library",
+    "keywords": ["qpdf", "ffi"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Fernando Herrero",
+            "homepage": "https://lab.fawno.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.4.0",
+        "ext-ffi": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fawno\\QPDF\\": "src/"
+        }
+    }
+}
