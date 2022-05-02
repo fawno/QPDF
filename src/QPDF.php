@@ -22,15 +22,16 @@
 
 		public function __construct (string $lib_path, string $header = null) {
 			$header = $header ?? file_get_contents(__DIR__ . '/qpdf-c.h');
+
 			$this->qpdf = FFI::cdef($header, $lib_path);
-			$this->data = $this->qpdf->qpdf_init();
-			$this->supressWarnings(true);
+
+			$this->init();
+			$this->silenceErrors();
+			$this->silenceWarnings(true);
 		}
 
 		public function __destruct () {
-			if (is_object($this->data)) {
-				$this->qpdf->qpdf_cleanup(FFI::addr($this->data));
-			}
+			$this->cleanup();
 		}
 
     public function init () : void {
@@ -43,20 +44,32 @@
 			}
     }
 
-		public function getVersion () : string {
+		public function attempRecovery (bool $recovery) : void {
+			$this->qpdf->qpdf_set_attempt_recovery($this->data, $recovery);
+		}
+
+    public function getVersion () : string {
 			return $this->qpdf->qpdf_get_qpdf_version();
 		}
 
-		public function supressWarnings (bool $suppress) : void {
-			$this->qpdf->qpdf_set_suppress_warnings($this->data, $suppress);
+		public function silenceWarnings (bool $silence) : void {
+			$this->qpdf->qpdf_set_suppress_warnings($this->data, $silence);
+		}
+
+		public function silenceErrors () : void {
+			$this->qpdf->qpdf_silence_errors($this->data);
 		}
 
 		public function readFile (string $filename, string $password = null) : int {
 			return $this->qpdf->qpdf_read($this->data, $filename, $password);
 		}
 
-		public function initWrite (string $filename) : int {
-			return $this->qpdf->qpdf_init_write($this->data, $filename);
+		public function initWrite (?string $filename = null) : int {
+			if ($filename) {
+				return $this->qpdf->qpdf_init_write($this->data, $filename);
+			} else {
+				return $this->qpdf->qpdf_init_write_memory($this->data);
+			}
 		}
 
 		public function preserveEncryption (bool $preserve) : void {
@@ -117,5 +130,12 @@
 
 		protected function getErrorMessageDetail (CData $error) : string {
 			return $this->qpdf->qpdf_get_error_message_detail($this->data, $error);
+		}
+
+		public function getBuffer () {
+			$len = $this->qpdf->qpdf_get_buffer_length($this->data);
+			$buffer = $this->qpdf->qpdf_get_buffer($this->data);
+
+			return FFI::string($buffer, $len);
 		}
 	}
