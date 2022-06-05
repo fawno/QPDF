@@ -1,12 +1,20 @@
 <?php
+
   declare(strict_types=1);
 
 	namespace Fawno\QPDF;
 
 	use FFI;
 	use FFI\CData;
+  use Fawno\QPDF\QPDFException;
 
 	class QPDF {
+    public const QPDF_SUCCESS = 0;
+    public const QPDF_WARNINGS = 1 << 0;
+    public const QPDF_ERRORS = 1 << 1;
+    public const QPDF_TRUE = 1;
+    public const QPDF_FALSE = 0;
+
 		public const ERROR_CODES = [
 			'success',
 			'internal',    /* logic/programming error -- indicates bug */
@@ -20,8 +28,42 @@
 		protected $qpdf = null;
 		protected $data = null;
 
+		protected const HEADER = <<<EOT
+      typedef struct _qpdf_data* qpdf_data;
+      typedef struct _qpdf_error* qpdf_error;
+      typedef int QPDF_ERROR_CODE;
+      typedef int QPDF_BOOL;
+      void qpdf_silence_errors(qpdf_data qpdf);
+      char const* qpdf_get_qpdf_version();
+      qpdf_data qpdf_init();
+      void qpdf_cleanup(qpdf_data* qpdf);
+      QPDF_BOOL qpdf_has_error(qpdf_data qpdf);
+      qpdf_error qpdf_get_error(qpdf_data qpdf);
+      QPDF_BOOL qpdf_more_warnings(qpdf_data qpdf);
+      qpdf_error qpdf_next_warning(qpdf_data qpdf);
+      char const* qpdf_get_error_full_text(qpdf_data q, qpdf_error e);
+      enum qpdf_error_code_e qpdf_get_error_code(qpdf_data q, qpdf_error e);
+      char const* qpdf_get_error_filename(qpdf_data q, qpdf_error e);
+      unsigned long long qpdf_get_error_file_position(qpdf_data q, qpdf_error e);
+      char const* qpdf_get_error_message_detail(qpdf_data q, qpdf_error e);
+      void qpdf_set_suppress_warnings(qpdf_data qpdf, QPDF_BOOL value);
+      QPDF_ERROR_CODE qpdf_check_pdf(qpdf_data qpdf);
+      void qpdf_set_attempt_recovery(qpdf_data qpdf, QPDF_BOOL value);
+      QPDF_ERROR_CODE qpdf_read(qpdf_data qpdf, char const* filename, char const* password);
+      QPDF_ERROR_CODE qpdf_init_write(qpdf_data qpdf, char const* filename);
+      QPDF_ERROR_CODE qpdf_init_write_memory(qpdf_data qpdf);
+      size_t qpdf_get_buffer_length(qpdf_data qpdf);
+      unsigned char const* qpdf_get_buffer(qpdf_data qpdf);
+      void qpdf_set_preserve_encryption(qpdf_data qpdf, QPDF_BOOL value);
+      QPDF_ERROR_CODE qpdf_write(qpdf_data qpdf);
+    EOT;
+
 		public function __construct (string $lib_path, string $header = null) {
-			$header = $header ?? file_get_contents(__DIR__ . '/qpdf-c.h');
+			if (!is_file($lib_path)) {
+				throw new QPDFException(sprintf('% not found', $lib_path));
+			}
+
+      $header = $header ?? (is_file(__DIR__ . '/qpdf-c.h') ? file_get_contents(__DIR__ . '/qpdf-c.h') : self::HEADER);
 
 			$this->qpdf = FFI::cdef($header, $lib_path);
 
